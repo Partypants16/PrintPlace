@@ -1,13 +1,10 @@
 [versions]
-agp = "8.13.2"
+agp = "9.3.1"
 kotlin = "2.3.10"
 ksp = "2.3.10"
-# core-ktx/lifecycle are pinned below their newest releases on purpose: 1.19.0 /
-# 2.11.0 require compileSdk 37 + AGP 9.1, which need the still-new AGP 9.x
-# DSL migration. These versions are the newest ones that still target
-# compileSdk 36 on AGP 8.13.x.
-coreKtx = "1.17.0"
-lifecycle = "2.10.0"
+# core-ktx/lifecycle are no longer pinned as we upgraded to AGP 9.x
+coreKtx = "1.19.0"
+lifecycle = "2.11.0"
 activityCompose = "1.13.0"
 composeBom = "2026.06.01"
 navigationCompose = "2.9.8"
@@ -46,6 +43,5 @@ androidx-test-espresso-core = { group = "androidx.test.espresso", name = "espres
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
