@@ -45,15 +45,19 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.printplace.app.model.ImportedModel
 import com.printplace.app.model.ProcessingStatus
-import com.printplace.app.util.formatWidthHeightDepth
+import com.printplace.app.util.formatWidthDepthHeight
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LibraryScreen(viewModel: LibraryViewModel) {
+fun LibraryScreen(
+    viewModel: LibraryViewModel,
+    onPreviewModel: (String) -> Unit,
+) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
     var pendingDeletion by rememberSaveable { mutableStateOf<String?>(null) }
@@ -105,7 +109,7 @@ fun LibraryScreen(viewModel: LibraryViewModel) {
                         ModelCard(
                             model = model,
                             onSelect = { viewModel.onSelectModel(model.id) },
-                            onPreview = { viewModel.onPreviewRequested() },
+                            onPreview = { onPreviewModel(model.id) },
                             onViewInAr = { viewModel.onViewInArRequested() },
                             onDelete = { pendingDeletion = model.id },
                         )
@@ -188,8 +192,15 @@ private fun ModelCard(
             }
             Text(model.format.displayName, style = MaterialTheme.typography.labelLarge)
             Text(
-                text = model.dimensions?.formatWidthHeightDepth() ?: model.processingStatus.toLibraryLabel(),
+                text = model.dimensions?.formatWidthDepthHeight()
+                    ?: model.errorMessage
+                    ?: model.processingStatus.toLibraryLabel(),
                 style = MaterialTheme.typography.bodyMedium,
+                color = if (model.processingStatus == ProcessingStatus.FAILED) {
+                    MaterialTheme.colorScheme.error
+                } else {
+                    Color.Unspecified
+                },
                 modifier = Modifier.padding(top = 4.dp),
             )
             Row(
