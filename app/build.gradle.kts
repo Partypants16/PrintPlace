@@ -4,6 +4,15 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.filament.tools)
+}
+
+filament {
+    matc {
+        artifact = "com.google.android.filament:matc:${libs.versions.filament.get()}"
+    }
+    materialInputDir = project.layout.projectDirectory.dir("src/main/materials")
+    materialOutputDir = project.layout.projectDirectory.dir("src/main/assets/materials")
 }
 
 android {
@@ -15,7 +24,7 @@ android {
         minSdk = 26
         targetSdk = 37
         versionCode = 1
-        versionName = "0.1.0-milestone1"
+        versionName = "0.4.0-milestone4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -40,6 +49,10 @@ android {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
+    }
+
+    androidResources {
+        noCompress += "filamat"
     }
 }
 
@@ -75,6 +88,7 @@ dependencies {
     ksp(libs.androidx.room.compiler)
 
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.filament.android)
 
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
