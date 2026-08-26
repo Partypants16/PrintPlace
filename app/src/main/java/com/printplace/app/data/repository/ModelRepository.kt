@@ -22,6 +22,8 @@ interface ModelRepository {
 
     fun observeModels(): Flow<List<ImportedModel>>
 
+    suspend fun getModel(id: String): ImportedModel?
+
     suspend fun importModel(sourceUri: Uri): ImportOutcome
 
     /** Marks [id] as the sole [com.printplace.app.model.ImportedModel.isSelected] model. */

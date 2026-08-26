@@ -11,6 +11,8 @@ import androidx.navigation.compose.rememberNavController
 import com.printplace.app.PrintPlaceApplication
 import com.printplace.app.ui.library.LibraryScreen
 import com.printplace.app.ui.library.LibraryViewModel
+import com.printplace.app.ui.preview.PreviewScreen
+import com.printplace.app.ui.preview.PreviewViewModel
 
 /**
  * Only the library route exists for Milestone 1. Preview/import-progress/AR
@@ -19,6 +21,9 @@ import com.printplace.app.ui.library.LibraryViewModel
  */
 private object Routes {
     const val LIBRARY = "library"
+    const val PREVIEW = "preview/{modelId}"
+
+    fun preview(modelId: String) = "preview/$modelId"
 }
 
 @Composable
@@ -32,7 +37,21 @@ fun PrintPlaceNavGraph() {
                     initializer { LibraryViewModel(app.container.modelRepository) }
                 },
             )
-            LibraryScreen(viewModel = viewModel)
+            LibraryScreen(
+                viewModel = viewModel,
+                onPreviewModel = { modelId -> navController.navigate(Routes.preview(modelId)) },
+            )
+        }
+        composable(Routes.PREVIEW) { backStackEntry ->
+            val app = LocalContext.current.applicationContext as PrintPlaceApplication
+            val modelId = requireNotNull(backStackEntry.arguments?.getString("modelId"))
+            val viewModel: PreviewViewModel = viewModel(
+                key = modelId,
+                factory = viewModelFactory {
+                    initializer { PreviewViewModel(app.container.modelRepository, modelId) }
+                },
+            )
+            PreviewScreen(viewModel = viewModel, onBack = navController::navigateUp)
         }
     }
 }

@@ -48,10 +48,6 @@ class LibraryViewModel(private val repository: ModelRepository) : ViewModel() {
         viewModelScope.launch { repository.deleteModel(id) }
     }
 
-    fun onPreviewRequested() {
-        transientState.update { it.copy(userMessage = "3D preview arrives in a later milestone.") }
-    }
-
     fun onViewInArRequested() {
         transientState.update { it.copy(userMessage = "AR placement arrives in a later milestone.") }
     }
