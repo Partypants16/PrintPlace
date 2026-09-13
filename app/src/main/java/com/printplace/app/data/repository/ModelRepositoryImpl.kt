@@ -10,7 +10,11 @@ import com.printplace.app.data.storage.ModelFileStorage
 import com.printplace.app.data.storage.queryDocumentInfo
 import com.printplace.app.importer.FileValidationResult
 import com.printplace.app.importer.FileValidator
+import com.printplace.app.importer.GeometryImportResult
+import com.printplace.app.importer.GeometryImporters
 import com.printplace.app.model.ImportedModel
+import com.printplace.app.model.ModelDimensions
+import com.printplace.app.model.ModelFormat
 import com.printplace.app.model.ProcessingStatus
 import java.io.File
 import java.io.IOException
@@ -29,6 +33,10 @@ class ModelRepositoryImpl(
 
     override fun observeModels(): Flow<List<ImportedModel>> =
         dao.observeAll().map { entities -> entities.map { it.toDomain() } }
+
+    override suspend fun getModel(id: String): ImportedModel? = withContext(Dispatchers.IO) {
+        dao.getById(id)?.toDomain()
+    }
 
     override suspend fun importModel(sourceUri: Uri): ImportOutcome = withContext(Dispatchers.IO) {
         val docInfo = queryDocumentInfo(appContext, sourceUri)
@@ -51,6 +59,7 @@ class ModelRepositoryImpl(
         }
 
         val actualSizeBytes = File(storedPath).length()
+        val geometry = resolveGeometry(format, File(storedPath))
         val entity = ModelEntity(
             id = modelId,
             displayName = docInfo.displayName,
@@ -58,17 +67,37 @@ class ModelRepositoryImpl(
             storedFilePath = storedPath,
             importedAtEpochMillis = System.currentTimeMillis(),
             fileSizeBytes = actualSizeBytes,
-            widthMm = null,
-            heightMm = null,
-            depthMm = null,
-            dimensionSourceUnit = null,
-            processingStatus = ProcessingStatus.IMPORTED,
+            widthMm = geometry.dimensions?.widthMm,
+            heightMm = geometry.dimensions?.heightMm,
+            depthMm = geometry.dimensions?.depthMm,
+            dimensionSourceUnit = geometry.dimensions?.sourceUnit,
+            processingStatus = geometry.status,
             isSelected = false,
-            errorMessage = null,
+            errorMessage = geometry.errorMessage,
         )
         dao.insert(entity)
         ImportOutcome.Success(entity.toDomain())
     }
+
+    /** A format with no registered geometry importer leaves dimensions pending, not failed. */
+    private fun resolveGeometry(format: ModelFormat, file: File): GeometryResolution {
+        val parse = GeometryImporters.forFormat(format)
+            ?: return GeometryResolution(ProcessingStatus.IMPORTED, dimensions = null, errorMessage = null)
+        return when (val result = parse(file)) {
+            is GeometryImportResult.Success ->
+                GeometryResolution(ProcessingStatus.READY, result.dimensions, errorMessage = null)
+            is GeometryImportResult.Failure -> {
+                Log.w(TAG, "Geometry import failed for ${file.absolutePath}: ${result.reason}")
+                GeometryResolution(ProcessingStatus.FAILED, dimensions = null, result.reason)
+            }
+        }
+    }
+
+    private data class GeometryResolution(
+        val status: ProcessingStatus,
+        val dimensions: ModelDimensions?,
+        val errorMessage: String?,
+    )
 
     override suspend fun selectModel(id: String) = withContext(Dispatchers.IO) {
         dao.selectExclusively(id)
